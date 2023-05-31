@@ -8,8 +8,7 @@ from flask import Flask, make_response, jsonify, request
 from flask_migrate import Migrate
 from flask_restful import Api, Resource
 
-from models import db, Activity, Camper
-
+from models import db, Activity, Camper, Signup
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -70,16 +69,16 @@ class ActivityById (Resource):
     
 api.add_resource(ActivityById, '/activities/<int:id>')
 
-class Signup (Resource):
+class Signups(Resource):
     def post(self):
         try:
-            new_signup = Signup(camper_id=request.json['camper_id'], activity_id=request.json['activity_id'], time=request.json['time'])
+            new_signup = Signup(time=request.json['time'],camper_id=request.json['camper_id'], activity_id=request.json['activity_id'])
             db.session.add(new_signup)
             db.session.commit()
             return new_signup.to_dict(), 201
         except:
             return {'error': 'Signup not created'}, 400
-api.add_resource(Signup, '/signups')
+api.add_resource(Signups, '/signups')
 
 
 if __name__ == '__main__':
