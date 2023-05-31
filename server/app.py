@@ -18,10 +18,69 @@ app.json.compact = False
 migrate = Migrate(app, db)
 
 db.init_app(app)
+api = Api(app)
 
 @app.route('/')
 def home():
     return ''
+
+
+class Campers (Resource):
+
+    def get(self):
+        get_campers = [c.to_dict( only=('id','name','age') ) for c in Camper.query.all()]
+        return get_campers, 200
+    
+    def post(self):
+        try:
+            new_camper = Camper(name=request.json['name'], age=request.json['age'])
+            db.session.add(new_camper)
+            db.session.commit()
+            return new_camper.to_dict(), 201
+        except:
+            return {'error': 'Camper not created'}, 400
+        
+    
+api.add_resource(Campers, '/campers')
+
+class CamperById (Resource):
+    def get(self, id):
+        camper = Camper.query.filter_by(id=id).first()
+        if not camper:
+            return {'error': 'Camper not found'}, 404
+        return camper.to_dict(rules=('-activity.camper',)), 200
+    
+api.add_resource(CamperById, '/campers/<int:id>')
+
+
+class Activities (Resource):
+    def get(self):
+        get_activities = [a.to_dict( only=('id','name','difficulty') ) for a in Activity.query.all()]
+        return get_activities, 200
+api.add_resource(Activities, '/activities')
+
+class ActivityById (Resource):
+    def delete(self, id):
+        activity = Activity.query.filter_by(id=id).first()
+        if not activity:
+            return {'error': 'Activity not found'}, 404
+        db.session.delete(activity)
+        db.session.commit()
+        return make_response('', 204)
+    
+api.add_resource(ActivityById, '/activities/<int:id>')
+
+class Signup (Resource):
+    def post(self):
+        try:
+            new_signup = Signup(camper_id=request.json['camper_id'], activity_id=request.json['activity_id'], time=request.json['time'])
+            db.session.add(new_signup)
+            db.session.commit()
+            return new_signup.to_dict(), 201
+        except:
+            return {'error': 'Signup not created'}, 400
+api.add_resource(Signup, '/signups')
+
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
